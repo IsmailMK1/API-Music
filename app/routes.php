@@ -25,10 +25,9 @@ return function (App $app) {
             ])
         );
 
-        return $response->withHeader(
-            'Content-Type',
-            'application/json'
-        );
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(200);
     });
 
 
@@ -100,10 +99,9 @@ return function (App $app) {
             json_encode($artists)
         );
 
-        return $response->withHeader(
-            'Content-Type',
-            'application/json'
-        );
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(200);
     });
 
 
@@ -128,9 +126,7 @@ return function (App $app) {
         ";
 
         $stmt = $db->prepare($sql);
-
         $stmt->bindParam(':id', $id);
-
         $stmt->execute();
 
         $artist = $stmt->fetch();
@@ -152,10 +148,9 @@ return function (App $app) {
             json_encode($artist)
         );
 
-        return $response->withHeader(
-            'Content-Type',
-            'application/json'
-        );
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(200);
     });
 
 
@@ -221,6 +216,150 @@ return function (App $app) {
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus(201);
+
+    })->add(new JwtMiddleware());
+
+
+    // =====================================================
+    // PUT - MODIFIER UN ARTISTE
+    // PROTEGE PAR TOKEN JWT
+    // =====================================================
+
+    $app->put('/updateArtist/{id}', function (
+        Request $request,
+        Response $response,
+        array $args
+    ) {
+
+        $db = $this->get(PDO::class);
+
+        $id = $args['id'];
+
+        $data = $request->getParsedBody();
+
+        $name = $data['Name'] ?? '';
+        $annee = $data['Annee'] ?? '';
+        $description = $data['Description'] ?? '';
+
+        if (
+            empty($name) ||
+            empty($annee) ||
+            empty($description)
+        ) {
+
+            $response->getBody()->write(
+                json_encode([
+                    'error' => 'Informations manquantes'
+                ])
+            );
+
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(400);
+        }
+
+        // Vérification que l'artiste existe
+        $checkSql = "
+            SELECT idArtist
+            FROM artists
+            WHERE idArtist = :id
+        ";
+
+        $checkStmt = $db->prepare($checkSql);
+        $checkStmt->bindParam(':id', $id);
+        $checkStmt->execute();
+
+        if (!$checkStmt->fetch()) {
+
+            $response->getBody()->write(
+                json_encode([
+                    'error' => 'Artiste introuvable'
+                ])
+            );
+
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(404);
+        }
+
+        $sql = "
+            UPDATE artists
+            SET Name = :name,
+                Annee = :annee,
+                Description = :description
+            WHERE idArtist = :id
+        ";
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':name', $name);
+        $stmt->bindParam(':annee', $annee);
+        $stmt->bindParam(':description', $description);
+        $stmt->bindParam(':id', $id);
+
+        $stmt->execute();
+
+        $response->getBody()->write(
+            json_encode([
+                'message' => 'Artiste modifié avec succès'
+            ])
+        );
+
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(200);
+
+    })->add(new JwtMiddleware());
+
+
+    // =====================================================
+    // DELETE - SUPPRIMER UN ARTISTE
+    // PROTEGE PAR TOKEN JWT
+    // =====================================================
+
+    $app->delete('/deleteArtist/{id}', function (
+        Request $request,
+        Response $response,
+        array $args
+    ) {
+
+        $db = $this->get(PDO::class);
+
+        $id = $args['id'];
+
+        $sql = "
+            DELETE FROM artists
+            WHERE idArtist = :id
+        ";
+
+        $stmt = $db->prepare($sql);
+
+        $stmt->bindParam(':id', $id);
+
+        $stmt->execute();
+
+        if ($stmt->rowCount() === 0) {
+
+            $response->getBody()->write(
+                json_encode([
+                    'error' => 'Artiste introuvable'
+                ])
+            );
+
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withStatus(404);
+        }
+
+        $response->getBody()->write(
+            json_encode([
+                'message' => 'Artiste supprimé avec succès'
+            ])
+        );
+
+        return $response
+            ->withHeader('Content-Type', 'application/json')
+            ->withStatus(200);
 
     })->add(new JwtMiddleware());
 
