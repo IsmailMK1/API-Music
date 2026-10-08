@@ -1,42 +1,321 @@
-# Slim Framework 4 Skeleton Application
+# API Music 🎵
 
-[![Coverage Status](https://coveralls.io/repos/github/slimphp/Slim-Skeleton/badge.svg?branch=master)](https://coveralls.io/github/slimphp/Slim-Skeleton?branch=master)
+API REST développée en PHP avec le framework Slim, permettant de gérer des artistes, des albums et des notes musicales.
 
-Use this skeleton application to quickly setup and start working on a new Slim Framework 4 application. This application uses the latest Slim 4 with Slim PSR-7 implementation and PHP-DI container implementation. It also uses the Monolog logger.
+## 1. Présentation du projet
 
-This skeleton application was built for Composer. This makes setting up a new Slim Framework application quick and easy.
+Ce projet permet d'effectuer des opérations CRUD (Create, Read, Update, Delete) sur une base de données musicale MySQL.
 
-## Install the Application
+L'API utilise une authentification JWT (JSON Web Token) pour sécuriser certaines opérations.
 
-Run this command from the directory in which you want to install your new Slim Framework application. You will require PHP 7.4 or newer.
+### Technologies utilisées
 
-```bash
-composer create-project slim/slim-skeleton [my-app-name]
+- PHP 8.2
+- Slim Framework
+- MySQL
+- PDO
+- Composer
+- JWT (JSON Web Token)
+- Postman
+- PhpStorm
+- Alwaysdata (hébergement)
+
+## 2. URL de l'API
+
+**API en ligne :**
+
+https://ismailmk.alwaysdata.net
+
+**API locale :**
+
+http://localhost:8080
+
+Les endpoints présentés ci-dessous sont à ajouter à l'URL de base.
+
+## 3. Endpoints
+
+### Artistes
+
+| Méthode | Endpoint | Description | JWT |
+|---|---|---|---|
+| GET | `/GetAllArtist` | Récupérer tous les artistes | Non |
+| GET | `/getArtistById/{id}` | Récupérer un artiste par ID | Non |
+| GET | `/getArtistsByYear/{annee}` | Récupérer les artistes par année | Non |
+| POST | `/addArtist` | Ajouter un artiste | Oui |
+| PUT | `/updateArtist/{id}` | Modifier un artiste | Oui |
+| DELETE | `/deleteArtist/{id}` | Supprimer un artiste | Oui |
+
+### Albums
+
+| Méthode | Endpoint | Description | JWT |
+|---|---|---|---|
+| GET | `/GetAllAlbums` | Récupérer tous les albums | Non |
+| GET | `/getAlbumById/{id}` | Récupérer un album par ID | Non |
+| GET | `/getAlbumsByArtist/{id}` | Récupérer les albums d'un artiste | Non |
+| POST | `/addAlbum` | Ajouter un album | À vérifier |
+| PUT | `/updateAlbum/{id}` | Modifier un album | À vérifier |
+| DELETE | `/deleteAlbum/{id}` | Supprimer un album | À vérifier |
+
+### Notes (Ratings)
+
+| Méthode | Endpoint | Description | JWT |
+|---|---|---|---|
+| GET | `/GetAllRatings` | Récupérer toutes les notes | Non |
+| GET | `/getRatingById/{id}` | Récupérer une note par ID | Non |
+| GET | `/getRatingsByAlbum/{id}` | Récupérer les notes d'un album | Non |
+
+### Authentification JWT
+
+| Méthode | Endpoint | Description |
+|---|---|---|
+| POST | `/login` | Générer un token JWT |
+| GET | `/protected` | Tester une route protégée |
+
+## 4. Authentification
+
+Certaines routes nécessitent un token JWT.
+
+### Générer un token
+
+**Méthode :** `POST`
+
+**Endpoint :** `/login`
+
+Une fois l'authentification réussie, l'API retourne un token JWT.
+
+Exemple de réponse :
+
+```json
+{
+  "token": "eyJ..."
+}
 ```
 
-Replace `[my-app-name]` with the desired directory name for your new application. You'll want to:
+### Utiliser le token
 
-* Point your virtual host document root to your new application's `public/` directory.
-* Ensure `logs/` is web writable.
+Dans Postman :
 
-To run the application in development, you can run these commands 
+1. Ouvrir l'onglet **Authorization**.
+2. Sélectionner **Bearer Token**.
+3. Coller le token JWT obtenu.
+4. Envoyer la requête.
 
-```bash
-cd [my-app-name]
-composer start
+Postman ajoute automatiquement l'en-tête :
+
+```http
+Authorization: Bearer <TOKEN_JWT>
 ```
 
-Or you can use `docker-compose` to run the app with `docker`, so you can run these commands:
-```bash
-cd [my-app-name]
-docker-compose up -d
-```
-After that, open `http://localhost:8080` in your browser.
+### Vérification de la sécurité
 
-Run this command in the application directory to run the test suite
+**Sans token :**
 
-```bash
-composer test
+```http
+GET /protected
 ```
 
-That's it! Now go build something cool.
+Réponse :
+
+```json
+{
+  "error": "Unauthorized"
+}
+```
+
+Statut HTTP : `401 Unauthorized`.
+
+**Avec un token valide :**
+
+```http
+GET /protected
+```
+
+Statut HTTP : `200 OK`.
+
+L'API autorise alors l'accès à la route protégée.
+
+## 5. Exemples de requêtes
+
+### Récupérer tous les artistes
+
+```http
+GET /GetAllArtist
+```
+
+### Récupérer les albums d'un artiste
+
+```http
+GET /getAlbumsByArtist/4
+```
+
+Exemple de réponse :
+
+```json
+[
+  {
+    "idAlbums": 5,
+    "Titre": "SoloSun",
+    "Artist_idArtist": 4
+  },
+  {
+    "idAlbums": 6,
+    "Titre": "Sunrise",
+    "Artist_idArtist": 4
+  }
+]
+```
+
+### Récupérer une note
+
+```http
+GET /getRatingById/8
+```
+
+Exemple de réponse :
+
+```json
+{
+  "idRatings": 8,
+  "Grade": "5 Star",
+  "Albums_idAlbums": 5
+}
+```
+
+### Ajouter un artiste
+
+```http
+POST /addArtist
+```
+
+**Authorization :** Bearer Token
+
+**Body :** `x-www-form-urlencoded`
+
+| Champ | Exemple |
+|---|---|
+| Name | TestProf |
+| Annee | 2026 |
+| Description | Test creation JWT |
+
+Exemple de réponse obtenue :
+
+```json
+{
+  "message": "Artiste ajouté avec succès",
+  "idArtist": "18"
+}
+```
+
+Statut HTTP : `201 Created`.
+
+### Modifier un artiste
+
+```http
+PUT /updateArtist/18
+```
+
+**Authorization :** Bearer Token
+
+**Body :** `x-www-form-urlencoded`
+
+| Champ | Exemple |
+|---|---|
+| Name | TestProfModifie |
+| Annee | 2025 |
+| Description | Modification avec JWT |
+
+### Supprimer un artiste
+
+```http
+DELETE /deleteArtist/18
+```
+
+**Authorization :** Bearer Token
+
+## 6. Structure du projet
+
+```text
+API-Music/
+├── app/
+│   ├── dependencies.php
+│   ├── middleware.php
+│   ├── repositories.php
+│   ├── routes.php
+│   └── settings.php
+├── public/
+│   └── index.php
+├── src/
+│   ├── Entity/
+│   │   ├── Artist.php
+│   │   ├── Album.php
+│   │   └── Rating.php
+│   ├── Middleware/
+│   └── Repository/
+│       ├── BaseRepository.php
+│       ├── ArtistRepository.php
+│       ├── AlbumRepository.php
+│       └── RatingRepository.php
+├── vendor/
+└── composer.json
+```
+
+## 7. Base de données
+
+La base de données MySQL contient trois tables principales :
+
+**artists**
+
+- `idArtist` : identifiant de l'artiste
+- `Name` : nom de l'artiste
+- `Annee` : année
+- `Description` : description
+
+**albums**
+
+- `idAlbums` : identifiant de l'album
+- `Titre` : titre de l'album
+- `Artist_idArtist` : référence vers l'artiste
+
+**ratings**
+
+- `idRatings` : identifiant de la note
+- `Grade` : note attribuée
+- `Albums_idAlbums` : référence vers l'album
+
+### Relations
+
+- Un artiste peut posséder plusieurs albums.
+- Un album est associé à un artiste.
+- Un album peut posséder plusieurs notes.
+- Une note est associée à un album.
+
+## 8. Architecture
+
+Le projet utilise une architecture organisée autour des composants suivants :
+
+- **Routes** : définissent les endpoints HTTP.
+- **Repositories** : exécutent les opérations sur la base de données.
+- **BaseRepository** : centralise les opérations CRUD communes.
+- **Entities** : représentent les artistes, albums et notes sous forme d'objets PHP.
+- **Middleware JWT** : vérifie les tokens pour les routes protégées.
+
+L'accès à MySQL s'effectue avec PDO et des requêtes préparées pour les paramètres utilisateurs.
+
+## 9. Tests avec Postman
+
+Les tests réalisés comprennent :
+
+- Récupération des artistes, albums et notes.
+- Recherche d'artistes par année.
+- Recherche d'albums par artiste.
+- Recherche de notes par album.
+- Génération d'un token JWT.
+- Refus d'accès à `/protected` sans token (`401`).
+- Accès autorisé à `/protected` avec token (`200`).
+- Création d'un artiste avec token (`201`).
+
+Les autres opérations de modification et suppression peuvent être vérifiées avec Postman.
+
+## 10. Auteur
+
+Projet API Music — BTS CIEL, option Informatique et Réseaux.
